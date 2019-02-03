@@ -1,20 +1,21 @@
 import re
+import sys
 
 from PySide2.QtCore import QEvent, QRect, QTimer, QUrl, Qt
-from PySide2.QtGui import QIcon
+from PySide2.QtGui import QIcon, QPixmap, qApp
 from PySide2.QtWebEngineCore import QWebEngineUrlRequestInterceptor
 from PySide2.QtWebEngineWidgets import QWebEngineSettings, QWebEngineView
-from PySide2.QtWidgets import QApplication, QMainWindow, QSizeGrip, QSizePolicy, QVBoxLayout
+from PySide2.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QSizeGrip, QSizePolicy, QVBoxLayout
 from adblockparser import AdblockRules
 
-from qtloader import QtUiLoader
+from resources.qtloader import QtUiLoader
 
 
 class WebEngineUrlRequestInterceptor(QWebEngineUrlRequestInterceptor):
 
-    def __init__(self):
+    def __init__(self, path=''):
         QWebEngineUrlRequestInterceptor.__init__(self)
-        with open("easylist.txt") as f:
+        with open(f'{path}resources/easylist.txt') as f:
             self.raw_rules = f.readlines()
             self.rules = AdblockRules(self.raw_rules)
 
@@ -25,27 +26,23 @@ class WebEngineUrlRequestInterceptor(QWebEngineUrlRequestInterceptor):
 
 
 class FloaterWindow(QMainWindow):
-    css_off = '''
-    QPushButton{border:none; background:transparent}
-    '''
-
-    css_on = '''
-    QPushButton{border:1px; background:red}
-    '''
+    IS_PRODUCTION = getattr(sys, 'frozen', False)
+    path = 'lib/' if IS_PRODUCTION else ''
 
     def __init__(self):
         QMainWindow.__init__(self)
         self.resize(300, 220)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint )
         self.setup_images()
         self.setup_ui()
         self.setup_signals()
+        self.original_flags = self.windowFlags()
+        self.css_original = self.widget.styleSheet()
 
     def hideItens(self):
         self.widget.txtUrl.setVisible(False)
         self.widget.btnUrl.setVisible(False)
         self.widget.btnFix.setVisible(False)
-        self.widget.btnOpacity.setVisible(False)
         self.widget.btnClose.setVisible(False)
         self.widget.btnMove.setVisible(False)
         self.sizegrip.setVisible(False)
@@ -55,27 +52,23 @@ class FloaterWindow(QMainWindow):
         QPushButton{ border:none; }
         ''')
 
-        self.widget.btnMove.setStyleSheet(self.css_off)
-
     def showItens(self):
         self.widget.txtUrl.setVisible(True)
         self.widget.btnUrl.setVisible(True)
         self.widget.btnFix.setVisible(True)
         self.widget.btnClose.setVisible(True)
         self.widget.btnMove.setVisible(True)
-        self.widget.btnOpacity.setVisible(False)
         self.sizegrip.setVisible(True)
-        self.widget.setStyleSheet('''
-        #wdgMenu{ background-color: qlineargradient(spread:pad, x1:0.494636, y1:0.381, x2:0.523, y2:1, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 0)); }
-        QPushButton{ border:none; }
-        ''')
+        self.widget.setStyleSheet(self.css_original)
+        self.widget.txtUrl.setFocus()
 
     def setup_signals(self):
         self.qwebview.urlChanged.connect(self.update_text)
         self.widget.txtUrl.returnPressed.connect(self.urlChanged)
+        self.widget.btnClose.clicked.connect(self.close_event)
         self.widget.wdgMenu.installEventFilter(self)
         self.widget.btnMove.installEventFilter(self)
-        self.widget.btnClose.clicked.connect(self.close_event)
+        self.widget.btnFix.clicked.connect(self.toogle_visibility)
 
     def close_event(self):
         sys.exit(0)
@@ -83,6 +76,9 @@ class FloaterWindow(QMainWindow):
     def eventFilter(self, source, event):
         if event.type() == QEvent.Enter and source is self.widget.wdgMenu:
             self.showItens()
+
+        if event.type() == QEvent.FocusAboutToChange and source is self.qwebview:
+            self.hideItens()
 
         if event.type() == QEvent.Leave and source is self.widget.wdgMenu:
             self.hideItens()
@@ -100,33 +96,34 @@ class FloaterWindow(QMainWindow):
         return super(FloaterWindow, self).eventFilter(source, event)
 
     def setup_images(self):
-        self.img_pin_on = QIcon('resources/pin_on.png')
-        self.img_pin_off = QIcon('resources/pin_off.png')
-        self.img_resize = QIcon('resources/resize.png')
-        self.img_close = QIcon('resources/close.png')
-        self.img_move = QIcon('resources/move.png')
+        self.img_pin_on = QIcon(f'{self.path}resources/pin_on.png')
+        self.img_pin_off = QIcon(f'{self.path}resources/pin_off.png')
+        self.img_resize = QIcon(f'{self.path}resources/resize.png')
+        self.img_close = QIcon(f'{self.path}resources/close.png')
+        self.img_move = QIcon(f'{self.path}resources/move.png')
 
     def setup_ui(self):
         self.setStyleSheet('QMainWindow{padding-top:-10px}')
-        self.widget = QtUiLoader().load_ui('resources/main.ui', self)
-        self.setLayout(QVBoxLayout())
+        self.widget = QtUiLoader().load_ui(f'{self.path}resources/main.ui', self)
+        self.setLayout(QHBoxLayout())
         self.layout().setMargin(0)
         self.layout().setSpacing(0)
         self.setCentralWidget(self.widget)
 
         self.sizegrip = QSizeGrip(self.widget.pnlResize)
-        # self.wdg.wdgMenu.layout().addWidget(self.sizegrip, 0, Qt.AlignTop | Qt.AlignLeft)
 
         self.widget.btnMove.setIcon(self.img_move)
 
-        self.widget.txtUrl.setMinimumWidth(150)
-        self.widget.txtUrl.setMaximumWidth(2000)
+        self.widget.txtUrl.setMinimumWidth(50)
         self.widget.txtUrl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        self.widget.btnFix.setIcon(self.img_pin_on)
+        fix_icon = QIcon()
+        fix_icon.addPixmap(QPixmap(f'{self.path}resources/view.png'), QIcon.Normal, QIcon.On)
+        fix_icon.addPixmap(QPixmap(f'{self.path}resources/hide.png'), QIcon.Normal, QIcon.Off)
+        self.widget.btnFix.setIcon(fix_icon)
 
-        self.widget.btnOpacity.setVisible(False)
-        # self.wdg.btnOpacity.setIcon(self.img_close)
+        self.widget.btnUrl.setIcon(QIcon(f'{self.path}resources/share.png'))
+
         self.widget.btnClose.setIcon(self.img_close)
 
         self.setup_browser()
@@ -136,7 +133,7 @@ class FloaterWindow(QMainWindow):
         self.widget.wdgWeb.layout().addWidget(self.qwebview)
 
     def setup_browser(self):
-        # self.interceptor = WebEngineUrlRequestInterceptor()
+        # self.interceptor = WebEngineUrlRequestInterceptor(path)
         # QWebEngineProfile.defaultProfile().setRequestInterceptor(self.interceptor)
         self.qwebview = QWebEngineView()
         self.qwebview.setObjectName('webview')
@@ -144,14 +141,13 @@ class FloaterWindow(QMainWindow):
         self.qwebview.layout().setSpacing(0)
         self.qwebview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         self.qwebview.load(QUrl('http://google.com'))
-        self.qwebview.setMaximumSize(1920, 1080)
 
     def resizeEvent(self, *args, **kwargs):
         self.widget.wdgMenu.resize(self.width(), self.widget.wdgMenu.height())
-        self.widget.wdgWeb.resize(self.width(), self.height() - 2)
-        self.qwebview.setGeometry(QRect(0, 0, self.width(), self.height() - 2))
-        # self.qwebview.resize(self.width(), self.height() - 2)
-        self.widget.resize(self.width(), self.height() + 2)
+        self.widget.wdgWeb.resize(self.width(), self.height())
+        self.qwebview.setGeometry(QRect(0, 0, self.width(), self.height()))
+        self.qwebview.resize(self.width(), self.height())
+        self.widget.resize(self.width(), self.height())
 
     def update_text(self):
         self.disconnect_signals()
@@ -170,6 +166,7 @@ class FloaterWindow(QMainWindow):
         self.qwebview.urlChanged.connect(self.update_text)
 
     def urlChanged(self):
+        self.hideItens()
         self.disconnect_signals()
         path = self.widget.txtUrl.text()
         if 'www' in path or '.com' in path:
@@ -184,6 +181,38 @@ class FloaterWindow(QMainWindow):
 
     def load_html(self, video):
         return f"https://www.youtube.com/embed/{video}?controls=1"
+
+    def toogle_visibility(self):
+        if not self.widget.btnFix.isChecked():
+            self.setWindowFlags(self.original_flags)
+            self.show()
+        else:
+            self.setWindowFlags(self.original_flags | Qt.WindowStaysOnTopHint)
+            self.show()
+
+    def widgets_at(self, pos):
+        """Return ALL widgets at `pos`
+
+        Arguments:
+            pos (QPoint): Position at which to get widgets
+
+        """
+
+        widgets = []
+        widget_at = qApp.widgetAt(pos)
+
+        while widget_at:
+            widgets.append(widget_at)
+
+            # Make widget invisible to further enquiries
+            widget_at.setAttribute(Qt.WA_TransparentForMouseEvents)
+            widget_at = qApp.widgetAt(pos)
+
+        # Restore attribute
+        for widget in widgets:
+            widget.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+
+        return widgets
 
 
 if __name__ == '__main__':

@@ -7,27 +7,45 @@
     <x>0</x>
     <y>0</y>
     <width>493</width>
-    <height>313</height>
+    <height>355</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true">Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">#wdgMenu{
-	background-color: qlineargradient(spread:pad, x1:0.494636, y1:0.381, x2:0.523, y2:1, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 0));
+   <string notr="true">#Form {
+	background:transparent;
 }
+
+#wdgMenu{
+	background-color: qlineargradient(spread:pad, x1:0.523, y1:0.824, x2:0.523, y2:1, stop:0.363636 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 0));
+}
+
 QPushButton{
 	border:none;
+}
+
+#wdgUrl{
+	background:white;
+}
+
+#btnUrl:hover{
+	border-radius:12px;
+	background:lightgray;
+}
+
+#btnClose:hover{
+	background: red;
 }</string>
   </property>
   <widget class="QWidget" name="wdgWeb" native="true">
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>2</y>
+     <y>0</y>
      <width>493</width>
-     <height>311</height>
+     <height>351</height>
     </rect>
    </property>
   </widget>
@@ -36,8 +54,8 @@ QPushButton{
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>493</width>
-     <height>45</height>
+     <width>501</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="minimumSize">
@@ -48,7 +66,7 @@ QPushButton{
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
     <property name="spacing">
-     <number>0</number>
+     <number>10</number>
     </property>
     <property name="leftMargin">
      <number>0</number>
@@ -57,7 +75,7 @@ QPushButton{
      <number>0</number>
     </property>
     <property name="rightMargin">
-     <number>0</number>
+     <number>10</number>
     </property>
     <property name="bottomMargin">
      <number>0</number>
@@ -110,38 +128,74 @@ QPushButton{
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="btnUrl">
+     <widget class="QWidget" name="wdgUrl" native="true">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
       <property name="minimumSize">
        <size>
-        <width>30</width>
-        <height>30</height>
+        <width>150</width>
+        <height>0</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>30</width>
-        <height>30</height>
+        <width>16777215</width>
+        <height>27</height>
        </size>
       </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="txtUrl">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>30</height>
-       </size>
-      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <property name="leftMargin">
+        <number>6</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLineEdit" name="txtUrl">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>27</height>
+          </size>
+         </property>
+         <property name="inputMask">
+          <string notr="true"/>
+         </property>
+         <property name="text">
+          <string notr="true"/>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnUrl">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>
@@ -167,30 +221,8 @@ QPushButton{
       <property name="text">
        <string/>
       </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="btnOpacity">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>30</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>30</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="text">
-       <string/>
+      <property name="checkable">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
