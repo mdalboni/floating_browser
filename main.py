@@ -1,13 +1,14 @@
 import re
 import sys
 
-from PySide2.QtCore import QEvent, QRect, QTimer, QUrl, Qt
+from PySide2.QtCore import QEvent, QRect, QTimer, QUrl, Qt, Signal
 from PySide2.QtGui import QIcon, QPixmap, qApp
 from PySide2.QtWebEngineCore import QWebEngineUrlRequestInterceptor
 from PySide2.QtWebEngineWidgets import QWebEngineSettings, QWebEngineView
-from PySide2.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QSizeGrip, QSizePolicy, QVBoxLayout
+from PySide2.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QMenu, QSizeGrip, QSizePolicy, QVBoxLayout
 from adblockparser import AdblockRules
 
+from webpage import CustomWebPage
 from resources.qtloader import QtUiLoader
 
 
@@ -28,11 +29,18 @@ class WebEngineUrlRequestInterceptor(QWebEngineUrlRequestInterceptor):
 class FloaterWindow(QMainWindow):
     IS_PRODUCTION = getattr(sys, 'frozen', False)
     path = 'lib/' if IS_PRODUCTION else ''
+    video_list_signal = Signal(int)
 
     def __init__(self):
         QMainWindow.__init__(self)
+        self.setAccessibleName("MainForm")
+        self.setObjectName("MainForm")
+        self.setStyleSheet("#MainForm{background:black;}")
+        self.setMinimumSize(350, 150)
         self.resize(300, 220)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint )
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        self.videos_menu = QMenu()
+        self.video_available = False
         self.setup_images()
         self.setup_ui()
         self.setup_signals()
@@ -42,6 +50,7 @@ class FloaterWindow(QMainWindow):
     def hideItens(self):
         self.widget.txtUrl.setVisible(False)
         self.widget.btnUrl.setVisible(False)
+        self.widget.btnVideos.setVisible(False)
         self.widget.btnFix.setVisible(False)
         self.widget.btnClose.setVisible(False)
         self.widget.btnMove.setVisible(False)
@@ -56,6 +65,7 @@ class FloaterWindow(QMainWindow):
         self.widget.txtUrl.setVisible(True)
         self.widget.btnUrl.setVisible(True)
         self.widget.btnFix.setVisible(True)
+        self.widget.btnVideos.setVisible(self.video_available)
         self.widget.btnClose.setVisible(True)
         self.widget.btnMove.setVisible(True)
         self.sizegrip.setVisible(True)
@@ -69,6 +79,20 @@ class FloaterWindow(QMainWindow):
         self.widget.wdgMenu.installEventFilter(self)
         self.widget.btnMove.installEventFilter(self)
         self.widget.btnFix.clicked.connect(self.toogle_visibility)
+        self.video_list_signal.connect(self.update_video_list)
+
+    def update_video_list(self, size):
+        if self.widget.btnVideos.menu():
+            self.widget.btnVideos.menu().clear()
+
+        if size:
+            self.video_available = True
+            self.videos_menu = QMenu()
+            for video_idx in range(size):
+                self.videos_menu.addAction(f'Video #{video_idx + 1}', lambda value=f'openVideo({video_idx});': self.page.runJavaScript(value))
+            self.widget.btnVideos.setMenu(self.videos_menu)
+        else:
+            self.video_available = False
 
     def close_event(self):
         sys.exit(0)
@@ -81,7 +105,8 @@ class FloaterWindow(QMainWindow):
             self.hideItens()
 
         if event.type() == QEvent.Leave and source is self.widget.wdgMenu:
-            self.hideItens()
+            if not self.videos_menu.isVisible():
+                self.hideItens()
 
         if event.type() == QEvent.MouseButtonPress and source is self.widget.btnMove:
             self.offset = event.pos()
@@ -89,8 +114,8 @@ class FloaterWindow(QMainWindow):
         if event.type() == QEvent.MouseMove and source is self.widget.btnMove:
             x = event.globalX()
             y = event.globalY()
-            x_w = self.offset.x() + 20
-            y_w = self.offset.y() + 6
+            x_w = self.offset.x() + 27
+            y_w = self.offset.y() + 9
             self.move(x - x_w, y - y_w)
 
         return super(FloaterWindow, self).eventFilter(source, event)
@@ -101,6 +126,7 @@ class FloaterWindow(QMainWindow):
         self.img_resize = QIcon(f'{self.path}resources/resize.png')
         self.img_close = QIcon(f'{self.path}resources/close.png')
         self.img_move = QIcon(f'{self.path}resources/move.png')
+        self.img_video = QIcon(f'{self.path}resources/video.png')
 
     def setup_ui(self):
         self.setStyleSheet('QMainWindow{padding-top:-10px}')
@@ -112,18 +138,17 @@ class FloaterWindow(QMainWindow):
 
         self.sizegrip = QSizeGrip(self.widget.pnlResize)
 
-        self.widget.btnMove.setIcon(self.img_move)
-
         self.widget.txtUrl.setMinimumWidth(50)
         self.widget.txtUrl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         fix_icon = QIcon()
         fix_icon.addPixmap(QPixmap(f'{self.path}resources/view.png'), QIcon.Normal, QIcon.On)
         fix_icon.addPixmap(QPixmap(f'{self.path}resources/hide.png'), QIcon.Normal, QIcon.Off)
+
+        self.widget.btnMove.setIcon(self.img_move)
         self.widget.btnFix.setIcon(fix_icon)
-
+        self.widget.btnVideos.setIcon(self.img_video)
         self.widget.btnUrl.setIcon(QIcon(f'{self.path}resources/share.png'))
-
         self.widget.btnClose.setIcon(self.img_close)
 
         self.setup_browser()
@@ -133,20 +158,20 @@ class FloaterWindow(QMainWindow):
         self.widget.wdgWeb.layout().addWidget(self.qwebview)
 
     def setup_browser(self):
-        # self.interceptor = WebEngineUrlRequestInterceptor(path)
-        # QWebEngineProfile.defaultProfile().setRequestInterceptor(self.interceptor)
         self.qwebview = QWebEngineView()
+        self.qwebview.setStyleSheet("background:black")
+        self.page = CustomWebPage(self.video_list_signal)
+        self.page.profile().clearHttpCache()
+        self.qwebview.setPage(self.page)
         self.qwebview.setObjectName('webview')
         self.qwebview.layout().setMargin(0)
         self.qwebview.layout().setSpacing(0)
         self.qwebview.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-        self.qwebview.load(QUrl('http://google.com'))
 
     def resizeEvent(self, *args, **kwargs):
         self.widget.wdgMenu.resize(self.width(), self.widget.wdgMenu.height())
         self.widget.wdgWeb.resize(self.width(), self.height())
         self.qwebview.setGeometry(QRect(0, 0, self.width(), self.height()))
-        self.qwebview.resize(self.width(), self.height())
         self.widget.resize(self.width(), self.height())
 
     def update_text(self):
@@ -176,8 +201,10 @@ class FloaterWindow(QMainWindow):
             groups = re.search('http[s]?:\/\/[w]{0,3}\.?youtube\.com\/watch\?v=([a-zA-Z0-9]*)', path, re.IGNORECASE)
             extracted_youtube = groups.group(1)
             self.qwebview.load(QUrl(self.load_html(extracted_youtube)))
+            self.video_available = False
         else:
             self.qwebview.load(QUrl(path))
+            self.video_available = True
 
     def load_html(self, video):
         return f"https://www.youtube.com/embed/{video}?controls=1"
@@ -191,13 +218,6 @@ class FloaterWindow(QMainWindow):
             self.show()
 
     def widgets_at(self, pos):
-        """Return ALL widgets at `pos`
-
-        Arguments:
-            pos (QPoint): Position at which to get widgets
-
-        """
-
         widgets = []
         widget_at = qApp.widgetAt(pos)
 

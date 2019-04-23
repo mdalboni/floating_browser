@@ -15,7 +15,7 @@
   </property>
   <property name="styleSheet">
    <string notr="true">#Form {
-	background:transparent;
+	background:black;
 }
 
 #wdgMenu{
@@ -24,6 +24,10 @@
 
 QPushButton{
 	border:none;
+}
+
+QPushButton:hover{
+	background: rgba(186, 182, 182, 0.3);
 }
 
 #wdgUrl{
@@ -37,6 +41,10 @@ QPushButton{
 
 #btnClose:hover{
 	background: red;
+}
+
+QPushButton::menu-indicator {
+    image: none;
 }</string>
   </property>
   <widget class="QWidget" name="wdgWeb" native="true">
@@ -223,6 +231,31 @@ QPushButton{
       </property>
       <property name="checkable">
        <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnVideos">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>30</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>30</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
       </property>
      </widget>
     </item>
