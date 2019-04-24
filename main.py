@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 
@@ -8,8 +9,8 @@ from PySide2.QtWebEngineWidgets import QWebEngineSettings, QWebEngineView
 from PySide2.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QMenu, QSizeGrip, QSizePolicy, QVBoxLayout
 from adblockparser import AdblockRules
 
-from webpage import CustomWebPage
 from resources.qtloader import QtUiLoader
+from webpage import CustomWebPage
 
 
 class WebEngineUrlRequestInterceptor(QWebEngineUrlRequestInterceptor):
@@ -28,7 +29,7 @@ class WebEngineUrlRequestInterceptor(QWebEngineUrlRequestInterceptor):
 
 class FloaterWindow(QMainWindow):
     IS_PRODUCTION = getattr(sys, 'frozen', False)
-    path = 'lib/' if IS_PRODUCTION else ''
+    path = os.path.join(os.path.dirname(sys.executable), 'lib/') if IS_PRODUCTION else ''
     video_list_signal = Signal(int)
 
     def __init__(self):

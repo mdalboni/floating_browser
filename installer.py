@@ -53,10 +53,8 @@ bdist_msi_options = {
 }
 
 build_exe_options = {
-    'packages': [],
+    'packages': ['adblockparser', 'PySide2', 'shiboken2'],
     "include_files": [
-        os.path.join(win32_path, 'win32api.pyd'),
-        os.path.join(win32_path, 'win32gui.pyd'),
         '3rdparty/msv1_0.dll',
         '3rdparty/msvcirt.dll',
         '3rdparty/msvcp60.dll',
