@@ -1,8 +1,8 @@
 import sys
-from xml.dom import minidom
 
 from PySide2.QtCore import QFile
 from PySide2.QtUiTools import QUiLoader
+import defusedxml.minidom
 
 
 class QtUiLoader(QUiLoader):
@@ -28,7 +28,7 @@ class QtUiLoader(QUiLoader):
         widget_instance = self.load(qfile, parent)
         qfile.close()
 
-        document = minidom.parse(filename)
+        document = defusedxml.minidom.parse(filename)
         widgets = document.getElementsByTagName('widget')
         for widget in widgets:
             try:
